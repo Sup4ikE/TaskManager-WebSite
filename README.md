@@ -1,5 +1,3 @@
-# Task Manager WebSite
-
 Task Manager WebSite is a web application for managing tasks, built with ASP.NET Core.  
 It supports CRUD operations for tasks, user registration & login with JWT authentication, and data persistence with PostgreSQL via Entity Framework Core.
 
