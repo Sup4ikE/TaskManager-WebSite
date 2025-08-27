@@ -1,0 +1,119 @@
+@page "/addEditTask"
+@page "/addEditTask/{id:int}"
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Authorization
+@using Shared.DTO
+@using Microsoft.AspNetCore.Components.Forms
+@using Shared.Models
+@using TaskManager_Client.Clients
+@using TaskManager_Client.Services
+@inject AuthService AuthService
+@inject AuthenticationStateProvider AuthProvider
+@inject UsersClient UsersClient
+@inject TasksClient TasksClient
+@inject NavigationManager NavigationManager
+
+@if (isAuthLoaded && (user?.Identity?.IsAuthenticated ?? false))
+{
+    <h1 style="color: #C77B30; margin-top: 8%; text-align: center">@title</h1>
+
+    <div style="display: flex; justify-content: center; margin-top: 20px">
+    @if (taskItem != null)
+    {
+        <EditForm Model="@taskItem" FormName="addeditForm" OnValidSubmit="HandleSubmitAsync">
+            <DataAnnotationsValidator/>
+            <ValidationSummary/>
+
+            <div class="mb-3">
+                <label for="exampleInputTitle1" class="form-label" style="color: #C77B30">Title</label>
+                <InputText class="form-control" @bind-Value="taskItem.Title" id="exampleInputTitle1" style="width: 300px"/>
+                <ValidationMessage For="@(() => taskItem.Title)"/>
+            </div>
+
+            <div class="mb-3">
+                <label for="exampleInputDesc1" class="form-label" style="color: #C77B30">Description</label>
+                <InputText class="form-control" @bind-Value="taskItem.Description" id="exampleInputDesc1" style="width: 300px"/>
+                <ValidationMessage For="@(() => taskItem.Description)"/>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label" style="color: #C77B30">Is Completed</label>
+                <InputSelect class="form-control" @bind-Value="taskItem.IsCompleted" style="width: 300px">
+                    <option value="true">True</option>
+                    <option value="false">False</option>
+                </InputSelect>
+                <ValidationMessage For="@(() => taskItem.IsCompleted)"/>
+            </div>
+
+            <div class="d-flex gap-2 mt-3 justify-content-center">
+                <button type="submit" class="btn btn-primary" style="width: 145px; color: black; border: none;">Submit</button>
+                <a role="button" class="btn btn-outline-secondary" style="width: 145px; background: red; color: black; border: none;" href="/tasks">Cancel</a>
+            </div>
+        </EditForm>
+    }
+    else
+    {
+        <p>Loading task...</p>
+    }
+    </div>
+}
+
+@code 
+{
+    private bool isAuthLoaded = false;
+    private ClaimsPrincipal? user;
+    
+    [Parameter] 
+    public int? Id { get; set; }
+    
+    [SupplyParameterFromForm] 
+    private TaskDTO? taskItem { get; set; }
+
+    private string title;
+    
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthProvider.GetAuthenticationStateAsync();
+        user = authState.User;
+        isAuthLoaded = true;
+    }
+    
+    protected override async Task OnParametersSetAsync()
+    {
+        if (taskItem is not null)
+        { 
+            return;
+        }
+    
+        if (Id.HasValue) //edit operation
+        { 
+            taskItem = await TasksClient.GetTaskAsync(Id.Value); 
+            title = $"Edit Task: {taskItem.Title}";
+        }
+        else            //add operation
+        { 
+            taskItem = new() { 
+                Title = string.Empty, 
+                Description = string.Empty, 
+                Created = DateTime.UtcNow, 
+                IsCompleted = false
+            }; 
+            title = $"Add New Task"; 
+        } 
+    }
+    
+    private async Task HandleSubmitAsync() 
+    {
+        ArgumentNullException.ThrowIfNull(taskItem);
+        if(Id is null)
+        {
+            await TasksClient.PostTaskAsync(taskItem);
+        }
+        else
+        {
+            taskItem.Id = Id.Value;
+            await TasksClient.PutTaskAsync(taskItem.Id, taskItem);
+        }
+        NavigationManager.NavigateTo("/tasks");
+    }
+}

@@ -1,0 +1,58 @@
+﻿@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Authorization
+@using TaskManager_Client.Clients
+@inject AuthenticationStateProvider AuthProvider
+@inject AuthClient AuthClient
+@inject NavigationManager NavigationManager
+
+
+<nav class="navbar bg-orange text-white p-3 flex justify-between items-center">
+    <div class="flex space-x-3 items-center">
+        <a class="navbar-brand font-bold text-lg" href="#" style="color: black; text-decoration: none;">TaskManager</a>
+        <a href="/" class="mr-3" style="color: black; text-decoration: none; padding-right: 10px">Home</a>
+
+        @if (isAuthLoaded && (user?.Identity?.IsAuthenticated ?? false))
+        {
+            <a href="/tasks" class="mr-3" style="color: black; text-decoration: none; padding-right: 10px">Tasks</a>
+
+            @if (user.IsInRole("Admin"))
+            {
+                <a href="/users" class="mr-3" style="color: black; text-decoration: none;">Users</a>
+            }
+        }
+    </div>
+
+    <div class="flex space-x-3 items-center">
+        @if (isAuthLoaded)
+        {
+            @if (user?.Identity?.IsAuthenticated ?? false)
+            {
+                <button @onclick="Logout" class="bg-red-600 px-3 py-1 rounded" style="border: none; color: #C77B30; background: black">Logout</button>
+            }
+            else
+            {
+                <a href="/login" class="mr-3" style="color: black; text-decoration: none; padding-right: 10px">Login</a>
+                <a href="/register" style="color: black; text-decoration: none;">Register</a>
+            }
+        }
+    </div>
+</nav>
+
+
+@code {
+    private bool isAuthLoaded = false;
+    private ClaimsPrincipal? user;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthProvider.GetAuthenticationStateAsync();
+        user = authState.User;
+        isAuthLoaded = true;
+    }
+
+    private async Task Logout()
+    {
+        await AuthClient.LogoutAsync();
+        NavigationManager.NavigateTo("/", forceLoad: true);
+    }
+}

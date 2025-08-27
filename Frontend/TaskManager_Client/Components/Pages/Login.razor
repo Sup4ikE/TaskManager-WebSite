@@ -1,0 +1,68 @@
+@page "/login"
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Authorization
+@using Shared.DTO
+@using Microsoft.AspNetCore.Components.Forms
+@using Shared.Models
+@inject AuthService AuthService
+@using TaskManager_Client.Clients
+@using TaskManager_Client.Services
+@inject AuthenticationStateProvider AuthProvider
+@inject AuthClient AuthClient
+@inject CustomAuthStateProvider AuthStateProvider
+@inject NavigationManager NavigationManager
+<h1 class="h1">Login</h1>
+
+<div style="display: flex; justify-content: center; margin-top: 20px">
+    <EditForm Model="@userDto" FormName="loginForm" OnValidSubmit="HandleSubmitAsync">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="mb-3">
+            <label for="exampleInputUserName1" class="form-label" style="color: #C77B30">Username</label>
+            <InputText class="form-control" @bind-Value="userDto.Username" id="exampleInputUserName1" style="width: 300px"/>
+            <ValidationMessage For="@(() => userDto.Username)"/>
+        </div>
+
+        <div class="mb-3">
+            <label for="exampleInputPassword1" class="form-label" style="color: #C77B30">Password</label>
+            <InputText type="password" class="form-control" @bind-Value="userDto.Password" id="exampleInputPassword1" style="width: 300px"/>
+            <ValidationMessage For="@(() => userDto.Password)"/>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="justify-content: center; width: 300px; margin-top: 5px;">Submit</button>
+    </EditForm>
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <p style="color:red">@errorMessage</p>
+    }
+</div>
+
+@code
+{
+    [SupplyParameterFromForm]
+    private UserDTO? userDto { get; set; } = new UserDTO();
+
+    private string errorMessage;
+    private bool isLoading = false;
+
+    private async Task HandleSubmitAsync()
+    {
+        errorMessage = "";
+        if (userDto != null)
+        {
+            var registeredUser = await AuthClient.LoginAsync(userDto);
+            if (registeredUser != null)
+            {
+                AuthStateProvider.NotifyAuthStateChanged();
+                NavigationManager.NavigateTo("/", forceLoad: true);
+            }
+            else
+            {
+                errorMessage = "Login failed";
+            }
+        }
+    }
+}
+

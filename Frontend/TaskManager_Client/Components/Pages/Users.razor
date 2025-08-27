@@ -1,0 +1,95 @@
+@page "/users"
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Authorization
+@using Shared.DTO
+@using TaskManager_Client.Clients
+@using TaskManager_Client.Services
+@using Microsoft.AspNetCore.Components.Forms
+@using Shared.Models
+@inject AuthService AuthService
+@inject AuthenticationStateProvider AuthProvider
+@inject UsersClient UsersClient
+@inject NavigationManager NavigationManager
+
+<h1 style="color: #C77B30; margin-top: 30px; text-align: center">Users</h1>
+
+@if (isAuthLoaded && (user?.Identity?.IsAuthenticated ?? false))
+{
+    @if (user.IsInRole("Admin"))
+    {
+        @if (users.Count == 0)
+        {
+            <p>No users found.</p>
+        }
+        else
+        {
+            <div class="div">
+                <table class="table-dark" style="color: #C77B30;">
+                    <thead style="margin-bottom: 100px; border-bottom: 2px solid #C77B30;">
+                    <tr>
+                        <th scope="col" style="padding-right: 35px">Id</th>
+                        <th scope="col" style="padding-right: 35px">Username</th>
+                        <th scope="col" style="padding-right: 35px">Role</th>
+                        <th scope="col">Delete</th>
+                    </tr>
+                    </thead>
+                    <tr style="height:15px"></tr>
+                    <tbody>
+                    @foreach (var user in users)
+                    {
+                        <tr>
+                            <td>@user.Id</td>
+                            <td>@user.Username</td>
+                            <td>
+                                @if (user.Role == String.Empty)
+                                {
+                                    <p style="padding-top: 14px">User</p>
+                                }
+                                else
+                                {
+                                    @user.Role
+                                }
+                            </td>
+                            <td>
+                                <button class="btn btn-danger" @onclick="() => DeleteUser(user.Id)">Delete</button>
+                            </td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        }
+    }
+}
+
+@code {
+    private List<UserResponseDTO> users = new();
+    private bool isAuthLoaded = false;
+    private ClaimsPrincipal? user;
+
+    private async Task DeleteUser(int id)
+    {
+        await UsersClient.DeleteUserAsync(id);
+        users = await UsersClient.GetUsersAsync();
+    }
+    
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthProvider.GetAuthenticationStateAsync();
+        user = authState.User;
+
+        if (user.Identity?.IsAuthenticated ?? false && user.IsInRole("Admin"))
+        {
+            try
+            {
+                users = await UsersClient.GetUsersAsync();
+            }
+            catch (HttpRequestException ex)
+            {
+                Console.WriteLine("API error: " + ex.Message);
+            }
+        }
+
+        isAuthLoaded = true;
+    }
+}

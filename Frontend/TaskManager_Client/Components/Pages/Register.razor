@@ -1,0 +1,64 @@
+@page "/register"
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Authorization
+@using Shared.DTO
+@using Microsoft.AspNetCore.Components.Forms
+@using Shared.Models
+@using TaskManager_Client.Clients
+@inject AuthenticationStateProvider AuthProvider
+@inject AuthClient AuthClient
+@inject NavigationManager NavigationManager
+<h1 class="h1">Registration</h1>
+
+<div style="display: flex; justify-content: center; margin-top: 20px">
+    <EditForm Model="@userDto" FormName="registerForm" OnValidSubmit="HandleSubmitAsync">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="mb-3">
+            <label for="exampleInputUserName1" class="form-label" style="color: #C77B30">Username</label>
+            <InputText class="form-control" @bind-Value="userDto.Username" id="exampleInputUserName1" style="width: 300px"/>
+            <ValidationMessage For="@(() => userDto.Username)"/>
+        </div>
+
+        <div class="mb-3">
+            <label for="exampleInputPassword1" class="form-label" style="color: #C77B30">Password</label>
+            <InputText type="password" class="form-control" @bind-Value="userDto.Password" id="exampleInputPassword1" style="width: 300px"/>
+            <ValidationMessage For="@(() => userDto.Password)"/>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="justify-content: center; width: 300px; margin-top: 5px">Submit</button>
+    </EditForm>
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <p style="color:red">@errorMessage</p>
+    }
+</div>
+
+@code 
+{
+    [SupplyParameterFromForm] 
+    private UserDTO? userDto { get; set; } = new UserDTO();
+
+    private string errorMessage;
+
+    private async Task HandleSubmitAsync()
+    {
+        errorMessage = "";
+        if (userDto != null)
+        {
+            var registeredUser = await AuthClient.RegisterAsync(userDto);
+            if (registeredUser != null)
+            {
+                NavigationManager.NavigateTo("/login");
+            }
+            else
+            {
+                errorMessage = "Registration failed";
+            }
+        }
+    }
+}
+
+

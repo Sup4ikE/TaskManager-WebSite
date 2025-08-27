@@ -1,0 +1,50 @@
+﻿@page "/"
+@using System.IdentityModel.Tokens.Jwt
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Authorization
+@using TaskManager_Client.Clients
+@using TaskManager_Client.Services
+@inject AuthenticationStateProvider AuthProvider
+@inject AuthClient AuthClient
+@inject NavigationManager NavigationManager
+@inject AuthService AuthService
+
+<PageTitle>Home</PageTitle>
+
+@if (isAuthLoaded && (user?.Identity?.IsAuthenticated ?? false))
+{
+    @if (user.IsInRole("Admin"))
+    {
+        <h1 class="h11">Welcome, Bruce Wayne 🦇</h1>
+        <h2 class="h2">
+            The Batcave of tasks awaits you.<br>
+            Here, you can oversee all users, track your missions <br> and ensure everything runs as smoothly as your nightly patrols.<br>
+            Remember: even the smallest task today keeps Gotham safe tomorrow.<br>
+            <br>
+            — Your personal task guardian
+        </h2>
+    }
+    else
+    {
+        <h1 class="h1">Hello @user.Identity?.Name</h1>
+        <h1 class="h">Welcome to TaskManager</h1>
+        <h2 class="h2">You can see and operate your tasks in top menu</h2>
+    }
+}
+else
+{
+    <h1 class="h1">Welcome to TaskManager</h1>
+    <h2 class="h2">To start work please login</h2>
+}
+
+@code{
+    private bool isAuthLoaded = false;
+    private ClaimsPrincipal? user;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthProvider.GetAuthenticationStateAsync();
+        user = authState.User;
+        isAuthLoaded = true;
+    }
+}

@@ -1,0 +1,101 @@
+@page "/tasks"
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Authorization
+@using Shared.DTO
+@using Microsoft.AspNetCore.Components.Forms
+@using Shared.Models
+@using TaskManager_Client.Clients
+@using TaskManager_Client.Services
+@inject AuthService AuthService
+@inject AuthenticationStateProvider AuthProvider
+@inject UsersClient UsersClient
+@inject TasksClient TasksClient
+@inject NavigationManager NavigationManager
+
+@if (isAuthLoaded && (user?.Identity?.IsAuthenticated ?? false))
+{
+    <h1 style="color: #C77B30; margin-top: 25px; text-align: center; margin-bottom: 20px">Tasks</h1>
+    
+    <div class="d-flex flex-wrap gap-3 justify-content-center">
+    @foreach (var task in tasks)
+    {
+        <div class="card bg-success" style="width: 18rem; color: black">
+            <div class="card-body">
+                <h5 class="card-title">@task.Title</h5>
+                <p class="card-text">@task.Description</p>
+            </div>
+            <ul class="list-group list-group-flush" style="border-color: black; margin: 0; padding: 0;">
+                <li class="list-group-item" style="background-color: #198754; border-color: black;">
+                    @if (@task.IsCompleted == true)
+                    {
+                        <p style="margin-bottom: 3px">Completed</p>
+                    }
+                    else
+                    {
+                        <p style="margin-bottom: 3px">Not Completed</p>
+                    }
+                </li>
+                <li class="list-group-item" style="background-color: #198754; border-color: black;">@task.Created.ToLocalTime().ToString("dd.MM.yyyy")</li>
+            </ul>
+            <div class="card-body">
+                <div class="d-flex gap-2 mt-3 justify-content-center">
+                    <button class="btn btn-primary" style="width: 145px; color: black; border: none;" @onclick="() => EditTask(task.Id)">Edit</button>
+                    <button class="btn btn-danger" style="width: 145px; color: black; border: none;" @onclick="() => DeleteTask(task.Id)">Delete</button>
+                </div>
+            </div>
+        </div>
+    }
+    </div>
+    
+
+    @* <button @onclick="GoToAddTask" style="margin-left: 1330px; margin-top: 520px; width: 100px; height: 40px; border-radius: 10px; border: none; color: black; background: #C77B30">Add Task</button> *@
+    <button class="btn" 
+            style="position: fixed; bottom: 70px; right: 20px; width: 120px; background-color: #C77B30; color: black; border-radius: 10px;"
+            @onclick="GoToAddTask">
+        Add Task
+    </button>
+
+}
+
+@code 
+{
+    private List<TaskDTO> tasks = new();
+    private bool isAuthLoaded = false;
+    private ClaimsPrincipal? user;
+
+    private void GoToAddTask()
+    {
+        NavigationManager.NavigateTo("/addEditTask");
+    }
+
+    private void EditTask(int id)
+    {
+        NavigationManager.NavigateTo($"/addEditTask/{id}");
+    }
+
+    private async Task DeleteTask(int id)
+    {
+        await TasksClient.DeleteTaskAsync(id);
+        tasks = (await TasksClient.GetTasksAsync()).ToList();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthProvider.GetAuthenticationStateAsync();
+        user = authState.User;
+
+        if (user.Identity?.IsAuthenticated ?? false)
+        {
+            try
+            {
+                tasks = (await TasksClient.GetTasksAsync()).ToList();
+            }
+            catch (HttpRequestException ex)
+            {
+                Console.WriteLine("API error: " + ex.Message);
+            }
+        }
+
+        isAuthLoaded = true;
+    }
+}
