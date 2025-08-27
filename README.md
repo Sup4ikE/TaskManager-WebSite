@@ -14,7 +14,7 @@ It supports CRUD operations for tasks, user registration & login with JWT authen
 ---
 
 ## 🧰 Technologies Used
-- C# (.NET 8)  
+- C# (.NET 9)  
 - ASP.NET Core (Web API + Blazor WebAssembly)  
 - Entity Framework Core  
 - PostgreSQL  
